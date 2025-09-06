@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: defiquest
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: defiquest_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgres://defiquest:secret@postgres:5432/defiquest_db?sslmode=disable"
+
+  orkes-worker:
+    image: orkesworkerimage # placeholder for your Orkes worker image
+    environment:
+      ORKES_API_KEY: ${ORKES_API_KEY}
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
