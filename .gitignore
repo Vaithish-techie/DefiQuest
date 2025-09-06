@@ -1,0 +1,64 @@
+# DeFiQuest - Professional .gitignore
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+artifacts/
+cache/
+build/
+dist/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Blockchain
+deployments/localhost.json
+deployments/hardhat.json
+
+# Temporary files
+*.tmp
+*.temp

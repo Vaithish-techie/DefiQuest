@@ -70,6 +70,18 @@ body {
     color: #bdecff;
     font-size: 1.05rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.network-indicator {
+    background: #51b2fd;
+    color: #101621;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
 .hidden {
@@ -217,6 +229,96 @@ input[type="text"]:focus {
     font-size: 1.1rem;
     margin-top: 0.6rem;
     user-select: none;
+}
+
+/* Wallet Connection */
+.wallet-connection {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+.wallet-connection h3 {
+    color: #51b2fd;
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
+}
+
+.wallet-options {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.wallet-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: linear-gradient(135deg, #51b2fd, #7dfff4 80%);
+    color: #101621;
+    font-weight: 700;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 28px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px #51b2fd55;
+    user-select: none;
+}
+
+.wallet-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px #7dfff466;
+    filter: brightness(1.1);
+}
+
+.wallet-btn.secondary {
+    background: #253962;
+    color: #7dfff4;
+}
+
+.wallet-btn.secondary:hover {
+    background: #3a5794;
+}
+
+.manual-input {
+    max-width: 480px;
+    margin: 0 auto 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.network-selector {
+    margin-top: 2rem;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.network-selector label {
+    display: block;
+    color: #a3deff;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.network-selector select {
+    width: 100%;
+    background: #212d44;
+    color: #b6daf7;
+    border: 1px solid #3e4767;
+    border-radius: 14px;
+    padding: 0.9rem 1.6rem;
+    font-size: 1rem;
+}
+
+.network-selector select:focus {
+    outline: none;
+    border-color: #51b2fd;
+    box-shadow: 0 0 10px #51b2fdaa;
 }
 
 /* Quest Pathway */

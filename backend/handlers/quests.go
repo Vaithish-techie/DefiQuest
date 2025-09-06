@@ -1,6 +1,7 @@
 package handlers
 
 import (
+    "fmt"
     "github.com/gofiber/fiber/v2"
     "strconv"
     "time"
@@ -121,6 +122,7 @@ func CompleteQuest(c *fiber.Ctx) error {
         return fiber.NewError(fiber.StatusNotFound, "Quest not found")
     }
 
+    // Validate quiz answers if it's a quiz quest
     if quest.Type == QuestQuiz {
         correct := 0
         for _, question := range quest.Questions {
@@ -134,6 +136,7 @@ func CompleteQuest(c *fiber.Ctx) error {
         }
     }
 
+    // Record completion
     mu.Lock()
     if userCompletions[req.UserAddress] == nil {
         userCompletions[req.UserAddress] = make(map[int]time.Time)
@@ -141,15 +144,30 @@ func CompleteQuest(c *fiber.Ctx) error {
     userCompletions[req.UserAddress][id] = time.Now()
     mu.Unlock()
 
-    go mintNFTForUser(req.UserAddress, id)
+    // Queue NFT minting
+    tokenURI := fmt.Sprintf("https://defiquest.com/metadata/%d", id)
+    rarity := 0 // Common badge
+    if quest.XPReward >= 70 {
+        rarity = 3 // Legendary
+    } else if quest.XPReward >= 50 {
+        rarity = 2 // Epic
+    } else if quest.XPReward >= 30 {
+        rarity = 1 // Rare
+    }
+
+    QueueNFTMint(req.UserAddress, id, tokenURI, rarity)
 
     return c.JSON(fiber.Map{
-        "message":  "Quest completed, NFT mint triggered",
+        "message":  "Quest completed successfully! NFT badge will be minted shortly.",
         "quest_id": id,
+        "xp_earned": quest.XPReward,
+        "badge_rarity": []string{"Common", "Rare", "Epic", "Legendary"}[rarity],
     })
 }
 
 func mintNFTForUser(userAddr string, questID int) {
+    // This function is now replaced by the blockchain service
+    // Keeping for backward compatibility but it's deprecated
     time.Sleep(time.Second)
-    println("Mint simulated for user:", userAddr, "quest:", questID)
+    println("Legacy mint function called for user:", userAddr, "quest:", questID)
 }

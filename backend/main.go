@@ -27,27 +27,40 @@ func main() {
         },
     })
 
-app.Use(cors.New(cors.Config{
-    AllowOrigins:     "http://localhost:8000",
-    AllowCredentials: true,
-    AllowHeaders:     "Origin, Content-Type, Accept",
-}))
+    app.Use(cors.New(cors.Config{
+        AllowOrigins:     "http://localhost:8000",
+        AllowCredentials: true,
+        AllowHeaders:     "Origin, Content-Type, Accept",
+    }))
 
-
+    // Initialize database
     err := db.InitDB("")
     if err != nil {
         log.Fatalf("Database connection failed: %v", err)
     }
 
+    // Initialize blockchain service
+    err = handlers.InitBlockchainService()
+    if err != nil {
+        log.Printf("Warning: Blockchain service initialization failed: %v", err)
+        log.Println("NFT minting will be simulated instead of using real blockchain")
+    } else {
+        log.Println("Blockchain service initialized successfully")
+    }
+
+    // Authentication routes
     app.Post("/api/auth/nonce", handlers.GetNonce)
     app.Post("/api/auth/verify", handlers.VerifySignature)
 
+    // Quest routes
     app.Get("/api/quests", handlers.ListQuests)
     app.Get("/api/quest/:id", handlers.GetQuest)
     app.Post("/api/quest/:id/complete", handlers.CompleteQuest)
 
+    // User routes
     app.Get("/api/user/:address/profile", handlers.GetProfile)
     app.Get("/api/user/:address/productivity", handlers.GetProductivity)
 
+    log.Println("DeFiQuest backend server starting on :8081")
     log.Fatal(app.Listen(":8081"))
 }

@@ -19,6 +19,28 @@ app.add_middleware(
 class QuizRequest(BaseModel):
     topic: str
     num_questions: int = 5
+
+class AnalyzeRequest(BaseModel):
+    user_id: str
+    actions: list = []
+
+@app.post("/analyze")
+async def analyze_user_progress(req: AnalyzeRequest):
+    try:
+        # Generate AI feedback based on user actions
+        completed_quests = len(req.actions)
+        
+        if completed_quests == 0:
+            return {"ai_feedback": "Welcome to DeFiQuest! Start your learning journey by completing your first quest."}
+        elif completed_quests < 3:
+            return {"ai_feedback": f"Great start! You've completed {completed_quests} quest(s). Keep building your DeFi knowledge foundation."}
+        elif completed_quests < 5:
+            return {"ai_feedback": f"Excellent progress! With {completed_quests} quests completed, you're becoming a DeFi enthusiast. Consider exploring advanced topics."}
+        else:
+            return {"ai_feedback": f"Outstanding achievement! You've mastered {completed_quests} quests. You're well on your way to becoming a DeFi expert!"}
+            
+    except Exception as e:
+        return {"ai_feedback": "AI analysis temporarily unavailable. Keep up the great work!"}
     
 @app.post("/generate-quiz")
 async def generate_quiz(req: QuizRequest):
