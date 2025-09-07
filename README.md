@@ -1,22 +1,22 @@
 # DeFiQuest 🎓
+**Educational DeFi Platform with Blockchain-Based Achievement NFTs**  
+📺 Demo Video: [https://youtu.be/yHnERlTRSSA](https://youtu.be/yHnERlTRSSA)
 
-**Educational DeFi Platform with Blockchain-Based Achievement NFTs**
-
-A comprehensive educational platform that gamifies DeFi learning through interactive quests, habit tracking, and blockchain-verified achievements. Built for the Ethereum and BlockDAG hackathon tracks.
+A gamified learning platform that makes DeFi education engaging through interactive quests, AI-powered quizzes, and blockchain-verified NFT badges. Built for the **Ethereum** and **BlockDAG** hackathon tracks.
 
 ---
 
 ## 🌟 Overview
 
-DeFiQuest transforms DeFi education into an engaging journey where users complete quests, build learning habits, and earn NFT badges as proof of their achievements. The platform integrates AI-powered learning assessment with blockchain-verified credentials.
+Learning DeFi can be overwhelming. DeFiQuest simplifies this journey by turning it into quests — from beginner to advanced — where users learn, take quizzes, and earn **on-chain NFT badges** as proof of achievement.
 
-### **Key Features**
-- 📚 **Interactive Learning Quests** - Educational content with progression tracking
-- 🎯 **Habit Building System** - Daily learning goals and streak tracking  
-- 🤖 **AI-Powered Assessment** - Intelligent progress evaluation and personalized feedback
-- 🏆 **NFT Achievement Badges** - Blockchain-verified learning credentials
-- 🔗 **Multi-Network Support** - Deployed on Ethereum and BlockDAG networks
-- 💰 **Wallet Integration** - MetaMask authentication and transaction signing
+### Key Features
+- 📚 **Interactive Quests** – Bite-sized learning modules with progress tracking  
+- 🎯 **Habit Building** – Daily goals and streak tracking for consistent learning  
+- 🤖 **AI-Powered Quizzes** – Dynamic quizzes to evaluate learning in real-time  
+- 🏆 **NFT Badges** – On-chain certificates for completed quests  
+- 🔗 **Multi-Chain Support** – Deployed on Ethereum & BlockDAG testnets  
+- 💰 **Wallet Integration** – MetaMask-based authentication & transactions  
 
 ---
 
