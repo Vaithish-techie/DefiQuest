@@ -14,11 +14,11 @@ Successfully deployed the DeFiQuest BadgeNFT smart contract to both required hac
 
 ### 2. BlockDAG Primordial Testnet ✅
 - **Network**: BlockDAG Primordial Testnet
-- **Contract Address**: `0x86B48406609F25d1f5d07adB5625d0D55288cD3E`
+- **Contract Address**: `0xfe9b1996C881dE2204A69e92DB00EE2be37615a8`
 - **Chain ID**: 1043
 - **RPC URL**: https://rpc.primordial.bdagscan.com
-- **Explorer**: [View on BlockDAG Explorer](https://primordial.bdagscan.com/address/0x86B48406609F25d1f5d07adB5625d0D55288cD3E)
-- **Transaction Hash**: `0x22e33ae04adb9e81c2836da84c0f1fcbb8333e6b42c1449a21cc090b5ed75a4c`
+- **Explorer**: [View on BlockDAG Explorer](https://primordial.bdagscan.com/address/0xfe9b1996C881dE2204A69e92DB00EE2be37615a8)
+- **Transaction Hash**: `0x5081bfe7c7ef7cf8f8482223796bfea1de68b512bf8e4f2053896aa499516e53`
 - **Status**: Deployed Successfully
 
 ## Technical Architecture

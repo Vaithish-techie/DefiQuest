@@ -94,7 +94,10 @@ async function renderRoadmap() {
         if (!roadmapRes.ok || !profileRes.ok) throw new Error('Failed to load roadmap data.');
 
         const roadmap = (await roadmapRes.json()).data;
-        const profile = (await profileRes.json()).data;
+        const profileData = (await profileRes.json()).data;
+        
+        // Handle both old and new API response formats  
+        const profile = profileData.profile || profileData;
         const completedQuests = new Set(Object.keys(profile.completed_quests || {}));
         
         const totalQuests = roadmap.length;
@@ -254,14 +257,35 @@ async function renderProfile() {
         const response = await fetch(`${API_BASE}/profile?address=${wallet}`);
         if (!response.ok) throw new Error('Failed to load profile.');
         const data = (await response.json()).data;
-        const badgesHTML = data.badges && data.badges.length > 0 ? data.badges.map(b => `<div class="badge-item"><img src="${b.image_url}" alt="${b.name}" title="${b.name}"/><span>${b.name}</span></div>`).join('') : '<p>No badges earned yet. Complete a quiz to get your first one!</p>';
+        
+        // Handle both old and new API response formats
+        const profile = data.profile || data;
+        const nftBalances = data.nft_balances || { ethereum: 0, blockdag: 0 };
+        
+        const badgesHTML = profile.badges && profile.badges.length > 0 ? 
+            profile.badges.map(b => `<div class="badge-item"><img src="${b.image_url}" alt="${b.name}" title="${b.name}"/><span>${b.name}</span></div>`).join('') : 
+            '<p>No badges earned yet. Complete a quiz to get your first one!</p>';
+            
         const profileHTML = `
         <h1>My Profile</h1>
         <div class="profile-grid">
-            <div class="stat-card"><h3>Total XP</h3><div class="value">${data.xp || 0}</div></div>
-            <div class="stat-card"><h3>Quests Passed</h3><div class="value">${Object.keys(data.completed_quests || {}).length}</div></div>
-            <div class="stat-card"><h3>Current Streak</h3><div class="value">${data.streak || 0} days</div></div>
-            <div class="ai-feedback"><h3>🤖 AI Insights</h3><p>${data.ai_feedback || 'Keep learning to get insights!'}</p></div>
+            <div class="stat-card"><h3>Total XP</h3><div class="value">${profile.xp || 0}</div></div>
+            <div class="stat-card"><h3>Quests Passed</h3><div class="value">${Object.keys(profile.completed_quests || {}).length}</div></div>
+            <div class="stat-card"><h3>Current Streak</h3><div class="value">${profile.streak || 0} days</div></div>
+            <div class="nft-balances">
+                <h3>🎨 NFT Badges Minted</h3>
+                <div class="nft-stats">
+                    <div class="nft-stat">
+                        <span class="network-icon">⟠</span>
+                        <span>Ethereum: ${nftBalances.ethereum}</span>
+                    </div>
+                    <div class="nft-stat">
+                        <span class="network-icon">◈</span>
+                        <span>BlockDAG: ${nftBalances.blockdag}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="ai-feedback"><h3>🤖 AI Insights</h3><p>${profile.ai_feedback || 'Keep learning to get insights!'}</p></div>
             <div class="badges-panel"><h3>🏆 My NFT Badges</h3><div class="badges-grid">${badgesHTML}</div></div>
         </div>`;
         dom.mainContent().innerHTML = profileHTML;

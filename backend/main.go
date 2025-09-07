@@ -17,6 +17,8 @@ import (
 	"github.com/joho/godotenv"
 	"gofr.dev/pkg/gofr"
 	gofrHTTP "gofr.dev/pkg/gofr/http"
+
+	"github.com/Vaithish-techie/DefiQuest/backend/blockchain"
 )
 
 // --- Struct Definitions ---
@@ -40,6 +42,7 @@ func (fid *FlexibleID) UnmarshalJSON(data []byte) error {
 	}
 	return fmt.Errorf("ID must be a string or an integer")
 }
+
 type AIQuiz struct {
 	Topic     string     `json:"topic"`
 	Questions []Question `json:"questions"`
@@ -59,10 +62,10 @@ type SubmitQuizRequest struct {
 	Answers     map[string]int `json:"answers"`
 }
 type Profile struct {
-	XP              int                `json:"xp"`
-	Badges          []Badge            `json:"badges"`
-	AIText          string             `json:"ai_feedback"`
-	Streak          int                `json:"streak"`
+	XP              int                  `json:"xp"`
+	Badges          []Badge              `json:"badges"`
+	AIText          string               `json:"ai_feedback"`
+	Streak          int                  `json:"streak"`
 	CompletedQuests map[string]time.Time `json:"completed_quests"`
 }
 type Badge struct {
@@ -90,11 +93,15 @@ var defiRoadmap = []RoadmapQuest{
 	{ID: "advanced-daos", Title: "Intro to DAOs", Description: "Understand how Decentralized Autonomous Organizations are governed.", XP: 250, PrerequisiteIDs: []string{"intermediate-swapping"}},
 	{ID: "advanced-blockdag", Title: "The Rise of BlockDAG", Description: "Learn about the next evolution of blockchain architecture.", XP: 300, PrerequisiteIDs: []string{"intermediate-yield"}},
 }
+
 var userCompletions = make(map[string]map[string]time.Time)
+var blockchainService *blockchain.BlockchainService
 
 // --- Utility Functions ---
-func (e *HTTPError) Error() string                 { return e.Message }
-func newHTTPError(code int, reason string) error { return &HTTPError{Code: code, Reason: reason, Message: reason} }
+func (e *HTTPError) Error() string { return e.Message }
+func newHTTPError(code int, reason string) error {
+	return &HTTPError{Code: code, Reason: reason, Message: reason}
+}
 func findQuestByID(questID string) (*RoadmapQuest, bool) {
 	for i := range defiRoadmap {
 		if defiRoadmap[i].ID == questID {
@@ -206,6 +213,18 @@ func GetProfile(ctx *gofr.Context) (interface{}, error) {
 			completedTopics = append(completedTopics, quest.Title)
 		}
 	}
+
+	// Get real NFT balances from blockchain
+	var ethereumNFTs, blockdagNFTs int64
+	if blockchainService != nil {
+		if count, err := blockchainService.CheckNFTBalance(address, blockchain.NetworkEthereum); err == nil {
+			ethereumNFTs = count
+		}
+		if count, err := blockchainService.CheckNFTBalance(address, blockchain.NetworkBlockDAG); err == nil {
+			blockdagNFTs = count
+		}
+	}
+
 	profile := Profile{
 		XP:              totalXP,
 		Badges:          generateBadges(len(completedQuests), completedTopics),
@@ -213,7 +232,51 @@ func GetProfile(ctx *gofr.Context) (interface{}, error) {
 		Streak:          calculateStreak(completedQuests),
 		CompletedQuests: completedQuests,
 	}
-	return profile, nil
+
+	// Add blockchain NFT data to response
+	profileData := map[string]interface{}{
+		"profile": profile,
+		"nft_balances": map[string]int64{
+			"ethereum": ethereumNFTs,
+			"blockdag": blockdagNFTs,
+		},
+	}
+
+	return profileData, nil
+}
+
+func CheckNFTBalance(ctx *gofr.Context) (interface{}, error) {
+	address := ctx.Param("address")
+	network := ctx.Param("network")
+
+	if address == "" || network == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "address and network parameters are required")
+	}
+
+	if blockchainService == nil {
+		return nil, newHTTPError(http.StatusServiceUnavailable, "blockchain service not available")
+	}
+
+	var networkType blockchain.Network
+	switch strings.ToLower(network) {
+	case "ethereum", "sepolia":
+		networkType = blockchain.NetworkEthereum
+	case "blockdag", "primordial":
+		networkType = blockchain.NetworkBlockDAG
+	default:
+		return nil, newHTTPError(http.StatusBadRequest, "unsupported network: use 'ethereum' or 'blockdag'")
+	}
+
+	balance, err := blockchainService.CheckNFTBalance(address, networkType)
+	if err != nil {
+		return nil, newHTTPError(http.StatusInternalServerError, fmt.Sprintf("failed to check balance: %v", err))
+	}
+
+	return map[string]interface{}{
+		"address": address,
+		"network": network,
+		"balance": balance,
+	}, nil
 }
 func generateAIQuiz(topic string, numQuestions int) (*AIQuiz, error) {
 	apiKey := os.Getenv("PERPLEXITY_API_KEY")
@@ -323,21 +386,58 @@ func generateBadges(count int, topics []string) []Badge {
 	return badges
 }
 func mintNFTBadge(userAddress string, topic string) {
-	time.Sleep(2 * time.Second)
-	log.Printf("✅ Minted NFT Badge for user %s on topic %s\n", userAddress, topic)
+	log.Printf("🎨 Starting NFT badge minting for user %s on topic %s", userAddress, topic)
+
+	if blockchainService == nil {
+		log.Printf("❌ Blockchain service not initialized, cannot mint NFT")
+		return
+	}
+
+	// Mint on Ethereum Sepolia first
+	ethereumTxHash, err := blockchainService.MintBadgeNFT(userAddress, topic, blockchain.NetworkEthereum)
+	if err != nil {
+		log.Printf("❌ Failed to mint NFT on Ethereum: %v", err)
+	} else {
+		log.Printf("✅ NFT minted on Ethereum Sepolia - TX: %s", ethereumTxHash)
+	}
+
+	// Mint on BlockDAG as well for dual-chain compliance
+	blockdagTxHash, err := blockchainService.MintBadgeNFT(userAddress, topic, blockchain.NetworkBlockDAG)
+	if err != nil {
+		log.Printf("❌ Failed to mint NFT on BlockDAG: %v", err)
+	} else {
+		log.Printf("✅ NFT minted on BlockDAG Primordial - TX: %s", blockdagTxHash)
+	}
+
+	log.Printf("🏆 Badge minting completed for user %s on topic %s", userAddress, topic)
 }
 
 // --- Main Application ---
 func main() {
 	app := gofr.New()
 	log.Println("🚀 Starting DeFiQuest Learning Roadmap Backend on port 8000...")
+
+	// Initialize blockchain service
+	var err error
+	blockchainService, err = blockchain.Initialize()
+	if err != nil {
+		log.Printf("⚠️  Failed to initialize blockchain service: %v", err)
+		log.Println("🔧 The application will continue in simulation mode. Please check your blockchain configuration.")
+	} else {
+		log.Println("✅ Blockchain service initialized successfully")
+	}
+
 	app.UseMiddleware(corsMiddleware())
 	app.GET("/api/roadmap", GetRoadmap)
 	app.POST("/api/quests/generate", GenerateQuiz)
 	app.POST("/api/quests/submit", SubmitQuiz)
 	app.GET("/api/profile", GetProfile)
+	app.GET("/api/nft/balance/:address/:network", CheckNFTBalance)
 	app.GET("/api/health", func(ctx *gofr.Context) (interface{}, error) {
-		return map[string]string{"status": "healthy"}, nil
+		return map[string]interface{}{
+			"status":             "healthy",
+			"blockchain_enabled": blockchainService != nil,
+		}, nil
 	})
 	fmt.Println("✅ DeFiQuest Backend running on http://localhost:8000")
 	app.Run()
