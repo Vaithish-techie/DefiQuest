@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -91,13 +92,13 @@ func Initialize() (*BlockchainService, error) {
 	// Load contract addresses from environment variables
 	sepoliaContractEnv := os.Getenv("SEPOLIA_CONTRACT_ADDRESS")
 	if sepoliaContractEnv == "" {
-		sepoliaContractEnv = "0xd1Ba21Ca5DB1D65c8584B4588934AC3f748B6d3b" // fallback
+		sepoliaContractEnv = "0x4e5D385670953F3388C2a13dE561F092F18BbaF8" // Actual deployed address from sepolia.json
 	}
 	sepoliaAddr := common.HexToAddress(sepoliaContractEnv)
 
 	blockdagContractEnv := os.Getenv("BLOCKDAG_CONTRACT_ADDRESS")
 	if blockdagContractEnv == "" {
-		blockdagContractEnv = "0x6401Bf4309BED69eECCB16b4a0d73e7565D31eeE" // fallback
+		blockdagContractEnv = "0xD7259B9414dD7EFb5dBC214b5670b3d59dfcE773" // Actual deployed address from blockdag_testnet.json
 	}
 	blockdagAddr := common.HexToAddress(blockdagContractEnv)
 
@@ -168,15 +169,72 @@ func (bs *BlockchainService) MintBadgeNFT(userAddress, questTitle string, networ
 	auth.GasLimit = uint64(300000) // Estimate for NFT minting
 	auth.GasPrice = gasPrice
 
-	log.Printf("📤 Sending mint transaction on %s...", network)
-	log.Printf("✅ NFT Badge minted successfully for quest: %s", questTitle)
+	// Generate quest ID, token URI, and rarity
+	questId := hashQuestTitle(questTitle)
+	tokenURI := generateTokenURI(questTitle)
+	rarity := determineBadgeRarity(questTitle)
+
+	log.Printf("📤 Preparing mint transaction on %s...", network)
 	log.Printf("🎯 Target Address: %s", userAddress)
 	log.Printf("🔗 Network: %s", network)
 	log.Printf("📄 Contract: %s", contractAddr.Hex())
+	log.Printf("🏆 Quest: %s (ID: %d, Rarity: %d)", questTitle, questId, rarity)
 	log.Printf("💰 Gas Limit: %d, Gas Price: %s", auth.GasLimit, gasPrice.String())
 
-	// Create a more realistic transaction hash
-	txHash := fmt.Sprintf("0x%x%x", time.Now().UnixNano(), common.HexToHash(userAddress).Big().Int64())
+	// Pack the function call data
+	userAddr := common.HexToAddress(userAddress)
+	questIdBig := big.NewInt(questId)
+	rarityUint8 := uint8(rarity)
+
+	data, err := bs.contractABI.Pack("mintBadge", userAddr, questIdBig, tokenURI, rarityUint8)
+	if err != nil {
+		return "", fmt.Errorf("failed to pack function call: %w", err)
+	}
+
+	// Create the transaction
+	tx := &types.Transaction{}
+	tx = types.NewTx(&types.LegacyTx{
+		Nonce:    nonce,
+		GasPrice: gasPrice,
+		Gas:      auth.GasLimit,
+		To:       &contractAddr,
+		Value:    big.NewInt(0),
+		Data:     data,
+	})
+
+	// Sign the transaction
+	signedTx, err := auth.Signer(bs.fromAddress, tx)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	// Send the transaction
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return "", fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	txHash := signedTx.Hash().Hex()
+	log.Printf("📦 Transaction sent: %s", txHash)
+	log.Printf("⏳ Waiting for confirmation...")
+
+	// Wait for the transaction to be mined (with timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	receipt, err := bind.WaitMined(ctx, client, signedTx)
+	if err != nil {
+		log.Printf("⚠️ Transaction may still be pending: %v", err)
+		return txHash, nil // Return tx hash even if we can't wait for confirmation
+	}
+
+	if receipt.Status == 1 {
+		log.Printf("✅ NFT Badge minted successfully for quest: %s", questTitle)
+		log.Printf("🎉 Block: %d, Gas Used: %d", receipt.BlockNumber.Uint64(), receipt.GasUsed)
+	} else {
+		log.Printf("❌ Transaction failed - receipt status: %d", receipt.Status)
+		return txHash, fmt.Errorf("transaction failed with status %d", receipt.Status)
+	}
 
 	return txHash, nil
 }

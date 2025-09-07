@@ -95,6 +95,7 @@ var defiRoadmap = []RoadmapQuest{
 }
 
 var userCompletions = make(map[string]map[string]time.Time)
+var generatedQuizzes = make(map[string]*AIQuiz) // Store quizzes by questID for validation
 var blockchainService *blockchain.BlockchainService
 
 // --- Utility Functions ---
@@ -169,6 +170,10 @@ func GenerateQuiz(ctx *gofr.Context) (interface{}, error) {
 		log.Printf("❌ Error generating AI quiz: %v", err)
 		return nil, newHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
+	// Store the quiz for later validation
+	generatedQuizzes[req.QuestID] = quiz
+
 	return quiz, nil
 }
 
@@ -181,15 +186,27 @@ func SubmitQuiz(ctx *gofr.Context) (interface{}, error) {
 	if !ok {
 		return nil, newHTTPError(http.StatusNotFound, "Quest not found")
 	}
-	analysis, err := analyzeAIQuizAnswers(quest.Title, req.Answers)
+
+	// Get the stored quiz for validation
+	storedQuiz, exists := generatedQuizzes[req.QuestID]
+	if !exists {
+		return nil, newHTTPError(http.StatusBadRequest, "Quiz not found. Please generate a new quiz.")
+	}
+
+	analysis, err := analyzeAIQuizAnswers(storedQuiz, req.Answers)
 	if err != nil {
 		return nil, newHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
 	if allOk, ok := analysis["all_correct"].(bool); ok && allOk {
 		if userCompletions[req.UserAddress] == nil {
 			userCompletions[req.UserAddress] = make(map[string]time.Time)
 		}
 		userCompletions[req.UserAddress][req.QuestID] = time.Now()
+
+		// Clean up the stored quiz after successful completion
+		delete(generatedQuizzes, req.QuestID)
+
 		go mintNFTBadge(req.UserAddress, quest.Title)
 	}
 	analysis["xp_earned"] = quest.XP
@@ -331,8 +348,43 @@ func generateAIQuiz(topic string, numQuestions int) (*AIQuiz, error) {
 	}
 	return &quizData, nil
 }
-func analyzeAIQuizAnswers(topic string, answers map[string]int) (map[string]interface{}, error) {
-	return map[string]interface{}{"success": true, "all_correct": true, "feedback": fmt.Sprintf("Great job! You mastered %s.", topic)}, nil
+func analyzeAIQuizAnswers(quiz *AIQuiz, answers map[string]int) (map[string]interface{}, error) {
+	correctAnswers := 0
+	totalQuestions := len(quiz.Questions)
+
+	// Validate each answer
+	for _, question := range quiz.Questions {
+		questionID := string(question.ID)
+		userAnswer, exists := answers[questionID]
+
+		if exists && userAnswer == question.CorrectIdx {
+			correctAnswers++
+		}
+	}
+
+	allCorrect := correctAnswers == totalQuestions
+	successRate := float64(correctAnswers) / float64(totalQuestions) * 100
+
+	var feedback string
+	switch {
+	case allCorrect:
+		feedback = fmt.Sprintf("Perfect! You got all %d questions correct! 🎉", totalQuestions)
+	case successRate >= 80:
+		feedback = fmt.Sprintf("Great job! You got %d out of %d questions correct (%.0f%%).", correctAnswers, totalQuestions, successRate)
+	case successRate >= 60:
+		feedback = fmt.Sprintf("Good effort! You got %d out of %d questions correct (%.0f%%). Review the topic and try again.", correctAnswers, totalQuestions, successRate)
+	default:
+		feedback = fmt.Sprintf("You got %d out of %d questions correct (%.0f%%). Study the material more and try again.", correctAnswers, totalQuestions, successRate)
+	}
+
+	return map[string]interface{}{
+		"success":       allCorrect,
+		"all_correct":   allCorrect,
+		"correct_count": correctAnswers,
+		"total_count":   totalQuestions,
+		"success_rate":  successRate,
+		"feedback":      feedback,
+	}, nil
 }
 func getAIFeedback(userID string, count int, topics []string) string {
 	switch {
@@ -414,6 +466,14 @@ func mintNFTBadge(userAddress string, topic string) {
 
 // --- Main Application ---
 func main() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Printf("⚠️  Warning: Could not load .env file: %v", err)
+		log.Println("🔧 Continuing with system environment variables...")
+	} else {
+		log.Println("✅ Successfully loaded .env file")
+	}
+
 	app := gofr.New()
 	log.Println("🚀 Starting DeFiQuest Learning Roadmap Backend on port 8000...")
 

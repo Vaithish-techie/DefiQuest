@@ -1,8 +1,8 @@
 {
   "network": "blockdag_testnet",
   "chainId": 1043,
-  "contractAddress": "0xD7259B9414dD7EFb5dBC214b5670b3d59dfcE773",
-  "deployedAt": "2025-09-07T17:18:38.440Z",
+  "contractAddress": "0x2e7bA2dFEC7155F6529568182d44C3265D571177",
+  "deployedAt": "2025-09-07T19:41:15.699Z",
   "deployer": "0x785E821b89584897e5f286E2f671CCDe7Fc4f664",
-  "txHash": "0x4f957f91792e94e55359f485164bd8fdcf765732ca00b3377662cfa76e52895d"
+  "txHash": "0x3c3dc2e81ffdc0627ef6645e95827283990e27b1fde50dd1da7eee142b11a186"
 }
