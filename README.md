@@ -2,7 +2,7 @@
 **Educational DeFi Platform with Blockchain-Based Achievement NFTs**  
 📺 Demo Video: [https://youtu.be/yHnERlTRSSA](https://youtu.be/yHnERlTRSSA)
 
-A gamified learning platform that makes DeFi education engaging through interactive quests, AI-powered quizzes, and blockchain-verified NFT badges. Built for the **Ethereum** and **BlockDAG** hackathon tracks.
+A gamified learning platform that makes DeFi education engaging through interactive quests, AI-powered quizzes, and blockchain-verified NFT badges. Built for the **Akash**, **GoFr**, **Ethereum** and **BlockDAG** hackathon tracks.
 
 ---
 
