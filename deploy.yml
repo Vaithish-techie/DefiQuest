@@ -1,0 +1,40 @@
+---
+version: "2.0"
+
+services:
+  web:
+    # Use the image you will push to Docker Hub
+    image: sreedarsan0311/defiquest:v1.1
+    
+    # Environment variables are already baked into your Docker image via the .env file.
+    # You do not need to declare them here again unless you want to override them.
+    
+    expose:
+      - port: 80
+        as: 80
+        to:
+          - global: true # This makes your app accessible on the internet
+
+profiles:
+  compute:
+    web:
+      resources:
+        cpu:
+          units: 0.5 # A good starting point
+        memory:
+          size: 512Mi # Ample memory for Go + Nginx
+        storage:
+          size: 512Mi
+  
+  placement:
+    dcloud:
+      pricing:
+        web:
+          denom: uakt
+          amount: 10000 # Adjust as needed based on provider prices
+
+deployment:
+  web:
+    dcloud:
+      profile: web
+      count: 1 # Run one instance of your application
