@@ -105,7 +105,7 @@ You need testnet tokens to deploy contracts:
 - Request test ETH
 
 **For BlockDAG Testnet:**
-- Visit [BlockDAG Faucet](https://faucet.bdagscan.com/)
+- Visit [BlockDAG Faucet](https://primordial.bdagscan.com/faucet?chain=EVM)
 - Enter your wallet address
 - Request test BDAG
 
